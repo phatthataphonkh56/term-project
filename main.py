@@ -25,6 +25,7 @@ obstacles = [Obstacle(z=30 + i * 40, obstacle_type=random.choice(types)) for i i
 camera.position = (0, 3, -9)
 camera.rotation_x = 9
 
+
 game_over_text = Text('', origin=(0, 0), scale=2, color=color.red)
 score_text = Text('Score: 0', position=(-0.85, 0.45), scale=1.2)
 
@@ -41,7 +42,17 @@ def spawn_obstacle():
     obstacles.append(Obstacle(new_z))
     print("obstacle: ", len(obstacles))
 
-
+def explosion(position):
+    explosion = Animation(
+        'explode.gif',         
+        parent=camera.ui,
+        position=(0,0),
+        scale=1.8,
+        fps=12,                
+        loop=False                
+    )
+    
+    destroy(explosion, delay=2)
 def restart_game():
     global speed, difficulty_timer, score, spawn_timer, spawn_interval
 
@@ -49,7 +60,7 @@ def restart_game():
     player.x, player.z = 0, 0
     player.lane = 0
     player.target_x = 0
-
+    player.enabled = True
     speed = 20
     spawn_timer = 0
     spawn_interval = 8
@@ -92,6 +103,8 @@ def update():
         obs.upd(speed)
         if player.intersects(obs).hit:
             player.alive = False
+            explosion(player.position)
+            player.enabled = False
             game_over_text.text = f"GAME OVER!\nFINAL SCORE: {int(score)}\n\nPress SPACE to restart"
             break
 
