@@ -2,52 +2,84 @@ from ursina import *
 import random
 import time
 import math
-import os
 
-textures_list = [f"obstacle_pic/{file}" for file in os.listdir('obstacle_pic')]
-
+# --- (MODIFIED) ---
+# We no longer load textures here.
+# main.py will pass the texture list to us.
+# ------------------
 
 class Obstacle(Entity):
-
-    def __init__(self, z, obstacle_type='static'):
-        self.type = obstacle_type
-        lane_pos = random.choice([-1.5, 0, 1.5])
+    # --- (FIX) Added textures_list parameter ---
+    def __init__(self, z, x, textures_list=None):
+        
+        # --- (MODIFIED) Use the passed-in texture list ---
+        if not textures_list:
+            textures_list = ['white_cube'] # Failsafe
         tex = random.choice(textures_list)
-        self.base_lane = random.choice([-1.5, 0, 1.5])
+        # ---------------------------------------------
 
+        self.type = 'static' # Start as static, can be changed
+        self.base_lane = x
+        
         super().__init__(
             model='cube',
             texture=tex,
             color=color.white,
-            scale=(1.6, 2, 1),
-            position=(lane_pos, 1.05, z),
+            # --- (MODIFIED) Made walls narrower to match gates ---
+            scale=(1.4, 2, 1),
+            # --------------------------------------------------
+            position=(x, 1.05, z),
             collider='box'
         )
 
-        if self.type == 'moving':
-            self.move_speed = random.uniform(1, 2)
-
-        if self.type == 'lane_switch':
-            self.next_switch_time = time.time() + random.uniform(1, 2)
+        self.move_speed = 0
+        self.next_switch_time = 0
 
     def upd(self, speed):
+        # All obstacles move towards the player
         self.z -= time.dt * speed
 
+        # Handle movement for non-static types
         if self.type == 'moving':
             self.x = self.base_lane + math.sin(time.time() * self.move_speed) * 0.8
 
         elif self.type == 'lane_switch':
             if time.time() >= self.next_switch_time:
-                self.x = random.choice([-1.5, 0, 1.5])
+                # --- (MODIFIED) Use new wider lanes ---
+                self.x = random.choice([-2, 0, 2])
+                # ------------------------------------
                 self.next_switch_time = time.time() + random.uniform(1, 2)
 
-        if self.z < -10:
-            self.z += 200
-            self.base_lane = random.choice([-1.5, 0, 1.5])
-            self.x = self.base_lane
+    # --- (MODIFIED) Added textures_list parameter ---
+    def reset(self, z, x, speed, textures_list):
+        # Reset position
+        self.position = (x, 1.05, z)
+        self.base_lane = x
+        
+        # --- (MODIFIED) Use the passed-in texture list ---
+        if not textures_list:
+            textures_list = ['white_cube']
+        self.texture = random.choice(textures_list)
+        # ---------------------------------------------
 
-            if self.type == 'moving':
-                self.move_speed = random.uniform(1, 2)
+        # --- Difficulty Scaling ---
+        # As speed increases, obstacles get more complex
+        
+        # 1. Determine type based on speed
+        # At speed 20, 25% chance of complex.
+        # At speed 40, 75% chance of complex.
+        chance = min(0.75, (speed - 20) * 0.025) 
+        if random.random() < chance:
+            self.type = random.choice(['moving', 'lane_switch'])
+        else:
+            self.type = 'static'
 
-            if self.type == 'lane_switch':
-                self.next_switch_time = time.time() + random.uniform(1, 2)
+        # 2. Set movement speeds
+        if self.type == 'moving':
+            # Move speed scales with game speed
+            self.move_speed = random.uniform(1, 2) * (speed / 20)
+        
+        if self.type == 'lane_switch':
+            self.next_switch_time = time.time() + random.uniform(1, 2)
+            
+        self.enabled = True

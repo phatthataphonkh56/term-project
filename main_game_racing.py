@@ -1,160 +1,243 @@
-import pygame, sys, math
+from ursina import *
+import random
+import time
+import os
 
-pygame.init()
-WIDTH, HEIGHT = 1225, 692
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("City Racer Menu")
+from object.player import Player
+from object.road import Road
+from object.background import Background
+from object.obstacle import Obstacle
+from object.collectible import Collectible # Import new class
 
-# ==== โหลดทรัพยากร ====
-bg = pygame.image.load("menu_back.jpg").convert()
-bg = pygame.transform.scale(bg, (WIDTH, HEIGHT))
-logo_font = pygame.font.SysFont("glitch", 90)
-btn_font = pygame.font.SysFont("Origami Mommy", 34)
+# --- 1. Get the script's directory ---
+script_dir = os.path.dirname(os.path.abspath(__file__))
 
-pygame.mixer.music.load("menu_music.mp3")
-pygame.mixer.music.set_volume(0.3)
-pygame.mixer.music.play(-1)
+# --- 2. Define the pixelation shader ---
+pixelation_shader_code = '''
+#version 130
+uniform sampler2D tex;
+uniform vec2 resolution;
+in vec2 uv;
+out vec4 color;
+void main() {
+    vec2 block_uv = floor(uv * resolution) / resolution;
+    color = texture(tex, block_uv);
+}
+'''
+manual_pixel_shader = Shader(fragment=pixelation_shader_code)
 
-mouse_img = pygame.image.load("oiltank.png").convert_alpha()
-mouse_img = pygame.transform.scale(mouse_img,(100,100))
-pygame.mouse.set_visible(False)
+# --- 3. Initialize Ursina app with settings ---
+app = Ursina(
+    fullscreen=True,
+    samples=0,
+    borderless=True,
+    icon='my_icon.ico'  # <-- You would add this line
+)
 
-btn_img = pygame.image.load("text_box.png").convert_alpha()
-btn_img = pygame.transform.scale(btn_img,(200,80))
+# --- 4. Setup initial game objects ---
+player = Player()
+ROAD_LENGTH = 50
+NUM_ROADS = 50
+roads = [Road(z=i * ROAD_LENGTH) for i in range(NUM_ROADS)]
+background_texture_path = os.path.join(script_dir, 'city_backg.jpg')
+background_u = Background(texture_n=background_texture_path)
 
-car_img = pygame.image.load("car1_icon (2).png").convert_alpha()
-car_img = pygame.transform.scale(car_img,(150,150))
+# --- 5. Entity Pool Setup ---
+NUM_OBSTACLES = 15
+NUM_COLLECTIBLES = 10
 
-smoke_img = pygame.image.load("smoke_icon.png").convert_alpha()
-smoke_img = pygame.transform.scale(smoke_img, (50,50))
-smoke_part = []
+# Initialize the pools. They are "disabled" at first.
+obstacle_pool = []
+for i in range(NUM_OBSTACLES):
+    obs = Obstacle(z=0, x=0)
+    obs.enabled = False 
+    obstacle_pool.append(obs)
 
-flag_img = pygame.image.load("flag_racing.png").convert_alpha()
-flag_img = pygame.transform.scale(flag_img, (120,120))
+collectible_pool = []
+for i in range(NUM_COLLECTIBLES):
+    coll = Collectible(z=0, x=0)
+    coll.enabled = False
+    collectible_pool.append(coll)
 
-# ==== ตัวแปร ====
-bg_x = 0
-clock = pygame.time.Clock()
-start_scale = 1.0
-quit_scale = 1.0
-start_offset = 0
-quit_offset = 0
-time_float = 0
-car_y = 500
-car_start_x = 900
-car_end_x = 300
-car_x = car_start_x
-car_speed = -2
-smoke_timer = 0.5
-smoke_interval = 15 #ทุก 15 เฟรมสร้างควันใหม่
-flag_y = 210
-flag_x = 555
+# This tracks the Z position of the "front" of the spawning conga line
+farthest_obstacle_z = 0
+all_lanes = [-1.5, 0, 1.5] # Define lane positions globally
 
+# --- 6. Camera Setup ---
+camera.position = (0, 3, -9)
+camera.rotation_x = 9
+camera.shader = manual_pixel_shader
+target_resolution = (480, 270) # Low-res for pixel effect
+camera.set_shader_input('resolution', target_resolution)
 
-# ==== ลูปหลัก ====
-while True:
-    mouse = pygame.mouse.get_pos()
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit(); sys.exit()
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if start_hover:
-                print("Start game!")  # ที่นี่ต่อเข้าโหมดเกมจริง
-            if quit_hover:
-                pygame.quit(); sys.exit()
+# --- 7. UI Setup ---
+game_over_text = Text('', origin=(0, 0), scale=2, color=color.red)
+score_text = Text('Score: 0', position=(-0.85, 0.45), scale=1.2)
 
-    # พื้นหลังเลื่อนเบา ๆ
-    bg_x -= 0.5
-    if bg_x <= -WIDTH:
-        bg_x = 0
-    screen.blit(bg, (bg_x, 0))
-    screen.blit(bg, (bg_x + WIDTH, 0))
+# --- 8. Game State Variables ---
+speed = 20
+score = 0
+next_speed_increase_score = 500
 
-    # วาดชื่อเกม
-    amplitude_y = 5
-    amplitude_x = 3
-    speed = 0.03
-    offset_y = math.sin(time_float * speed) * amplitude_y
-    offset_x = math.sin(time_float * speed * 0.5) * amplitude_x
+# --- 9. Game Functions ---
 
-    # Shadow
-    shadow_color = (50, 50, 50)
-    shadow_offset = 5
-    title_text = "FAST BUT NOT FURIOUS"
-    shadow = logo_font.render(title_text, True, shadow_color)
-    screen.blit(shadow, ( WIDTH//2 - shadow.get_width()//2 + offset_x + shadow_offset,100 + offset_y + shadow_offset))
+def explosion(position):
+    """ Creates a one-shot explosion animation. """
+    explosion_path = os.path.join(script_dir, 'explode.gif')
+    explosion_anim = Animation(
+        explosion_path, 
+        parent=camera.ui, 
+        position=(0,0),
+        scale=1.8, 
+        fps=12, 
+        loop=False
+    )
+    destroy(explosion_anim, delay=2)
 
-    # Main text
-    main_color = (255, 255, 255)
-    title = logo_font.render(title_text, True, main_color)
-    screen.blit(title, (WIDTH//2 - title.get_width()//2 + offset_x,100 + offset_y))
-    time_float += 1
+def recycle_obstacle_smart(obs, current_speed):
+    """ Recycles a single obstacle, placing it intelligently. """
+    global farthest_obstacle_z
 
-    #smoke ตาม รถ
-    smoke_timer += 1
-    if smoke_timer >= smoke_interval :
-        smoke_timer = 0
-        smoke_part.append([car_x + 130, car_y + 60, 1.0, 255])
+    # 1. Set new Z pos (the "conga line")
+    # Gap shrinks as speed increases, clamped to a minimum of 20
+    gap = max(20, 50 - (current_speed - 20) * 0.75) 
+    new_z = farthest_obstacle_z + gap + random.uniform(-3, 3)
+    farthest_obstacle_z = new_z # This is the z for the *next* row.
 
-    for particle in smoke_part[:] :
-        x, y, scale, alpha = particle
-        smoke_surf = pygame.transform.rotozoom(smoke_img, 0, scale)
-        smoke_surf.set_alpha(alpha)
-        screen.blit(smoke_surf, (x,y))
-
-        particle[1] -= 0.5
-        particle[2] += 0.01
-        particle[3] -= 5
-        if particle[3] <= 0:
-            smoke_part.remove(particle)
+    # 2. Find available lanes at this Z-depth
+    # We check for other obstacles *near* this new Z position
+    occupied_lanes = [
+        o.x for o in obstacle_pool 
+        if o.enabled and o != obs and abs(o.z - new_z) < 10
+    ]
+    available_lanes = [l for l in all_lanes if l not in occupied_lanes]
     
-    #iconรถวิ่ง
-    screen.blit(car_img, (car_x,car_y))
-    car_x += car_speed
-    if car_x <= car_end_x :
-        car_x = car_start_x
+    # 3. Decide what to do
+    if not available_lanes:
+        # This means all 3 lanes are full! IMPOSSIBLE WALL.
+        # So, we disable this obstacle. It becomes the "gap".
+        obs.enabled = False
+    else:
+        # We have at least one open lane. Place the obstacle.
+        new_x = random.choice(available_lanes)
+        obs.reset(new_z, new_x, current_speed)
+        
+    # --- (FIXED) Collectible Spawning Logic ---
+    # AFTER placing the obstacle, find all *truly* safe lanes
+    # This is run every time, even if we made a gap
+    occupied_lanes_final = [
+        o.x for o in obstacle_pool 
+        if o.enabled and abs(o.z - new_z) < 10 # Check all obstacles at this Z
+    ]
+    safe_lanes = [l for l in all_lanes if l not in occupied_lanes_final]
 
-    # วาดปุ่มstart
-    start_rect = btn_img.get_rect(center=(WIDTH//2 ,370))
-    start_hover = start_rect.collidepoint(mouse)
+    if safe_lanes:
+        # Try to place a collectible in one of the safe lanes
+        try_place_collectible(new_z, safe_lanes)
 
-    target_scale = 1.2 if start_hover else 1.1
-    start_scale += (target_scale - start_scale) * 0.1
+def try_place_collectible(z, safe_lanes):
+    """ Finds a disabled collectible and places it in a random safe lane. """
+    coll = next((c for c in collectible_pool if not c.enabled), None)
+    if coll:
+        x = random.choice(safe_lanes)
+        coll.reset(z, x)
 
-    target_offset = -5 if start_hover else 0
-    start_offset += (target_offset - start_offset) * 0.2
+def initialize_game_world():
+    """ Sets up the initial state of obstacles and collectibles. """
+    global farthest_obstacle_z
+    
+    # Disable all entities
+    for obs in obstacle_pool: obs.enabled = False
+    for coll in collectible_pool: coll.enabled = False
 
-    scaled_start = pygame.transform.smoothscale(btn_img,(int(200 * start_scale),int(60 * start_scale)))
-    scaled_start_rect = scaled_start.get_rect(center=start_rect.center)
-    screen.blit(scaled_start, scaled_start_rect)
+    # Spawn the initial "conga line" of obstacles
+    farthest_obstacle_z = 30 # Start spawning 30 units ahead
+    for i in range(NUM_OBSTACLES):
+        # We call the recycler to place them one by one
+        recycle_obstacle_smart(obstacle_pool[i], 20) 
 
-    color = (255,255,255) if start_hover else (220,220,215)
-    label = btn_font.render("START!",True,color)
-    screen.blit(label,(scaled_start_rect.centerx - label.get_width()//2, 360 + start_offset))
+def restart_game():
+    """ Resets the game to its initial state. """
+    global speed, score, next_speed_increase_score, farthest_obstacle_z
 
-    #วาดปุ่มquit
-    quit_rect = btn_img.get_rect(center=(WIDTH//2 ,450))
-    quit_hover = quit_rect.collidepoint(mouse)
+    player.alive = True
+    player.x, player.z = 0, 0
+    player.enabled = True
+    player.rotation = (0, 90, 0) # Reset rotation
+    player.tilt_angle = 0
+    
+    speed = 20
+    score = 0
+    next_speed_increase_score = 500
+    game_over_text.text = ''
 
-    target_scale_q = 1.2 if quit_hover else 1.1
-    quit_scale += (target_scale_q - quit_scale) * 0.1
+    # Re-build the game world
+    initialize_game_world()
 
-    target_offset_q = -5 if quit_hover else 0
-    quit_offset += (target_offset_q - quit_offset) * 0.2
+    print("Game Restarted")
 
-    scaled_quit = pygame.transform.smoothscale(btn_img,(int(200 * quit_scale),int(60 * quit_scale)))
-    scaled_quit_rect = scaled_quit.get_rect(center=quit_rect.center)
-    screen.blit(scaled_quit, scaled_quit_rect)
+# --- 10. Main Update Loop ---
+def update():
+    global speed, score, next_speed_increase_score
 
-    color_q = (255,255,255) if quit_hover else (220,220,215)
-    label_q = btn_font.render("QUIT",True,color_q)
-    screen.blit(label_q,(scaled_quit_rect.centerx - label_q.get_width()//2, 440 + quit_offset))
+    if not player.alive:
+        if held_keys['space']:
+            restart_game()
+        return
 
-    #flag
-    screen.blit(flag_img, (flag_x, flag_y))
+    # --- Score & Difficulty ---
+    # Score increases faster at higher speeds
+    score += time.dt * (speed / 2)
+    score_text.text = f"Score: {int(score)}"
 
-    #วาดmouse
-    screen.blit(mouse_img, mouse)
+    # Increase speed based on score
+    if score >= next_speed_increase_score:
+        speed += 2
+        # Increase the score needed for the *next* level
+        next_speed_increase_score += int(next_speed_increase_score * 0.5) 
+        print(f"Speed increased: {speed}! Next at {next_speed_increase_score} points.")
 
-    pygame.display.flip()
-    clock.tick(60)
+    # --- Update Game Objects ---
+    for road in roads:
+        road.upd(speed, ROAD_LENGTH, roads)
+
+    # --- Update Obstacles ---
+    for obs in obstacle_pool:
+        if not obs.enabled:
+            continue # Skip disabled obstacles
+
+        obs.upd(speed)
+        
+        # Recycle if it's behind the player
+        if obs.z < player.z - 15:
+            recycle_obstacle_smart(obs, speed)
+
+        # Check for collision
+        if player.intersects(obs).hit:
+            player.alive = False
+            explosion(player.position)
+            player.enabled = False
+            game_over_text.text = f"GAME OVER!\nFINAL SCORE: {int(score)}\n\nPress SPACE to restart"
+            break
+            
+    # --- Update Collectibles ---
+    for coll in collectible_pool:
+        if not coll.enabled:
+            continue
+        
+        coll.upd() # Make it spin
+        
+        # Recycle if it's behind
+        if coll.z < player.z - 15:
+            coll.enabled = False # Just disable it, it will be re-used
+            
+        # Check for collection
+        if player.intersects(coll).hit:
+            score += 100 # <-- This is where you add points
+            coll.enabled = False # "Collect" it
+            # Optional: Add a sound effect
+            # Audio('coin.wav', autoplay=True) 
+
+# --- 11. Start the Game ---
+initialize_game_world() # Set up the world on first launch
+app.run()
