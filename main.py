@@ -54,7 +54,7 @@ player = Player()
 ROAD_LENGTH = 50
 NUM_ROADS = 50
 roads = [Road(z=i * ROAD_LENGTH) for i in range(NUM_ROADS)]
-background_u = Background(texture_n='city_backg.jpg')
+background_u = Background('city_backg.jpg')
 
 # --- Entity Pool Setup (Unchanged) ---
 NUM_OBSTACLES = 15
@@ -287,6 +287,12 @@ def update():
     # --------------------------------------------
     score_text.text = f"Score: {int(score)}"
 
+    if score < 0:
+        player.alive = False
+        explosion(player.position)
+        player.enabled = False
+        game_over_text.text = f"GAME OVER!\nFINAL SCORE: {int(score)}\n\nPress SPACE to restart"
+        return
     # --- Difficulty level-up logic ---
     if score >= next_speed_increase_score:
         speed += 2
