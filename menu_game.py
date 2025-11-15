@@ -12,31 +12,31 @@ def run_menu() :
     # This will be '.../term-project'
     script_dir = os.path.dirname(os.path.abspath(__file__))
     # -------------------------------------
-
+    menu_asset_dir = os.path.join(script_dir,'menu_asset')
     # ==== โหลดทรัพยากร ====
     # --- 3. BUILD FULL PATHS FOR ALL ASSETS ---
     try:
-        bg = pygame.image.load(os.path.join(script_dir, "menu_back.jpg")).convert()
+        bg = pygame.image.load(os.path.join(menu_asset_dir, "menu_back.jpg")).convert()
         bg = pygame.transform.scale(bg, (WIDTH, HEIGHT))
         
-        pygame.mixer.music.load(os.path.join(script_dir, "menu_music.mp3"))
+        pygame.mixer.music.load(os.path.join(menu_asset_dir, "menu_music.mp3"))
         pygame.mixer.music.set_volume(0.3)
         pygame.mixer.music.play(-1)
 
-        mouse_img = pygame.image.load(os.path.join(script_dir, "oiltank.png")).convert_alpha()
+        mouse_img = pygame.image.load(os.path.join(menu_asset_dir, "oiltank.png")).convert_alpha()
         mouse_img = pygame.transform.scale(mouse_img,(100,100))
         pygame.mouse.set_visible(False)
 
-        btn_img = pygame.image.load(os.path.join(script_dir, "text_box.png")).convert_alpha()
+        btn_img = pygame.image.load(os.path.join(menu_asset_dir, "text_box.png")).convert_alpha()
         btn_img = pygame.transform.scale(btn_img,(200,80))
 
-        car_img = pygame.image.load(os.path.join(script_dir, "car1_icon (2).png")).convert_alpha()
+        car_img = pygame.image.load(os.path.join(menu_asset_dir, "car1_icon (2).png")).convert_alpha()
         car_img = pygame.transform.scale(car_img,(150,150))
 
-        smoke_img = pygame.image.load(os.path.join(script_dir, "smoke_icon.png")).convert_alpha()
+        smoke_img = pygame.image.load(os.path.join(menu_asset_dir, "smoke_icon.png")).convert_alpha()
         smoke_img = pygame.transform.scale(smoke_img, (50,50))
 
-        flag_img = pygame.image.load(os.path.join(script_dir, "flag_racing.png")).convert_alpha()
+        flag_img = pygame.image.load(os.path.join(menu_asset_dir, "flag_racing.png")).convert_alpha()
         flag_img = pygame.transform.scale(flag_img, (120,120))
     except pygame.error as e:
         print(f"Error loading asset: {e}")
