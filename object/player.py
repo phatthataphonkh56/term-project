@@ -30,6 +30,20 @@ class Player(Entity):
         self.tilt_speed = 10
         self.max_tilt = 20 # Max tilt angle
         
+        # ---------- SYSTEM: UNDERGROUND ----------
+        self.is_diving = False
+        self.max_diving_time = 3
+        self.diving_timer = 0
+        self.final_y = 0.5
+        self.cooldown_time = 5
+        self.cooldown_timer = 0
+
+        # UI cooldown bar
+        self.cooldown_bar = Entity(parent=camera.ui, model='quad', color=color.azure,
+                                   scale=(0.3, 0.03), position=(-0.6, -0.45), origin=(-0.5, 0))
+        self.cooldown_bar_bg = Entity(parent=camera.ui, model='quad', color=color.gray,
+                                      scale=(0.3, 0.03), position=(-0.6, -0.45), origin=(-0.5, 0), z=1)
+
         self.shadow = Entity(
             parent=self,
             model='circle',
@@ -68,3 +82,49 @@ class Player(Entity):
         # Apply the tilt by rotating on the Z-axis
         # The base Y-rotation is 90 (facing right)
         self.rotation = (0, -self.tilt_angle, 0)
+
+        # =========================================
+        #            UNDERGROUND SYSTEM
+        # =========================================
+        t_pressed = held_keys['t']
+        # กด T เพื่อมุด / โผล่ขึ้น
+        if t_pressed and not hasattr(self, 't_lock'):   # detect single press
+            # ----------------- ถ้ากำลังมุด → โผล่ขึ้น -----------------
+            if self.is_diving:
+                self.is_diving = False
+                self.final_y = 0.5
+                self.cooldown_timer = self.cooldown_time  # เริ่ม cooldown ใหม่ทันที
+
+            # ----------------- ถ้าอยู่บนดิน → มุดลง -----------------
+            else:
+                if self.cooldown_timer <= 0:      # มุดได้เฉพาะตอน cooldown หมด
+                    self.is_diving = True
+                    self.diving_timer = self.max_diving_time
+                    self.final_y = -1.2
+            self.t_lock = True
+        if not t_pressed and hasattr(self, 't_lock'):
+            del self.t_lock
+        # ----------------- ขณะมุดอยู่ -----------------
+        if self.is_diving:
+
+            self.diving_timer -= time.dt
+            # หมดเวลามุด → เด้งขึ้นอัตโนมัติ
+            if self.diving_timer <= 0:
+                self.is_diving = False
+                self.final_y = 0.5
+                self.cooldown_timer = self.cooldown_time
+
+        # ----------------- ถ้าอยู่บนดิน → ลด cooldown -----------------
+        else:
+            if self.cooldown_timer > 0:
+                self.cooldown_timer -= time.dt
+                if self.cooldown_timer < 0:
+                    self.cooldown_timer = 0
+        self.y = lerp(self.y, self.final_y, time.dt * 5)
+        # ----------------- อัปเดตหลอด cooldown -----------------
+        if self.cooldown_timer > 0:
+            ratio = 1 - (self.cooldown_timer / self.cooldown_time)
+        else:
+            ratio = 1
+
+        self.cooldown_bar.scale_x = 0.3 * ratio
