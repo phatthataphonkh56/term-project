@@ -8,7 +8,7 @@ from object.road import Road
 from object.background import Background
 from object.obstacle import Obstacle
 from object.gate import Gate 
-
+import pygame
 # --- Asset Folder Setup ---
 script_dir = os.path.dirname(os.path.abspath(__file__))
 app = Ursina(
@@ -288,6 +288,7 @@ def update():
     score_text.text = f"Score: {int(score)}"
 
     if score < 0:
+        player.explode_sound.play()
         player.alive = False
         explosion(player.position)
         player.enabled = False
@@ -330,6 +331,7 @@ def update():
         if player.intersects(obs).hit:
             player.alive = False
             explosion(player.position)
+            player.explode_sound.play()
             player.enabled = False
             game_over_text.text = f"GAME OVER!\nFINAL SCORE: {int(score)}\n\nPress SPACE to restart"
             break

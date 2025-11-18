@@ -2,9 +2,9 @@ from ursina import *
 import math
 import time
 import os # <-- No longer needed
-
+import pygame
 # --- (REMOVED) All os path logic ---
-
+pygame.mixer.init()
 class Player(Entity):
     def __init__(self):
         super().__init__(
@@ -17,7 +17,10 @@ class Player(Entity):
             rotation_y=90,
             collider='box'
         )
-        
+        self.honk = pygame.mixer.Sound("horn.wav")
+        self.honk.set_volume(0.5)
+        self.explode_sound = pygame.mixer.Sound("explode_sound.wav")
+        self.explode_sound.set_volume(0.5)
         # --- Joystick movement variables ---
         self.alive = True
         self.move_speed = 5
@@ -128,3 +131,7 @@ class Player(Entity):
             ratio = 1
 
         self.cooldown_bar.scale_x = 0.3 * ratio
+
+        #----------------Honk-------------------
+        if held_keys['h']:
+            self.honk.play()
