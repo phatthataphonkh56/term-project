@@ -5,7 +5,7 @@ import time
 class Road(Entity):
     def __init__(self, z):
         super().__init__(
-            model='road_hd.glb',
+            model='game_asset/road_hd.glb',
             scale=0.3,
             position=(0, -0.1, z),
             rotation=(0, 180, 0)

@@ -10,7 +10,7 @@ from object.obstacle import Obstacle
 from object.gate import Gate 
 import pygame
 pygame.mixer.init()
-pygame.mixer.music.load("bgm.wav")
+pygame.mixer.music.load("game_asset/bgm.wav")
 pygame.mixer.music.set_volume(0.1)
 pygame.mixer.music.play(loops=-1)
 
@@ -59,7 +59,7 @@ player = Player()
 ROAD_LENGTH = 50
 NUM_ROADS = 50
 roads = [Road(z=i * ROAD_LENGTH) for i in range(NUM_ROADS)]
-background_u = Background('city_backg.jpg')
+background_u = Background('game_asset/city_backg.jpg')
 
 # --- Entity Pool Setup (Unchanged) ---
 NUM_OBSTACLES = 15
@@ -97,9 +97,9 @@ skill_text = Text(
 
 # --- High Score ---
 high_score = 0
-high_score_file = os.path.join(script_dir, "highscore.txt")
+high_score_file = "game_asset/highscore.txt"
 
-if os.path.exists(high_score_file):
+if high_score_file:
     try:
         with open(high_score_file, "r") as f:
             high_score = int(f.read().strip())
@@ -114,7 +114,6 @@ game_over_text = Text(
     origin=(0, 0), 
     scale=2, 
     color=color.red, 
-    background=False, 
     font='object/MODENINE.TTF' 
 )
 high_score_text = Text(
@@ -176,9 +175,9 @@ last_spawn_type = '' # To prevent spawning gates twice in a row
 # --- Explosion function (Unchanged) ---
 def explosion(position):
     try:
-        if os.path.exists('explode.gif'):
+        if os.path.exists('game_asset/explode.gif'):
             explosion_anim = Animation(
-                'explode.gif', 
+                'game_asset/explode.gif', 
                 parent=camera.ui, position=(0,0),
                 scale=1.8, fps=12, loop=False, autoplay=True
             )

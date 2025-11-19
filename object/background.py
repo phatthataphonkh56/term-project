@@ -2,7 +2,7 @@ from ursina import *
 
 
 class Background(Entity):
-    def __init__(self, texture_n='city_backg.jpg'):
+    def __init__(self, texture_n='game_asset/city_backg.jpg'):
         super().__init__(
             model='quad',
             texture=texture_n,

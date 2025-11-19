@@ -10,18 +10,18 @@ class Player(Entity):
         super().__init__(
             # --- (SIMPLIFIED) ---
             # This path is now relative to the asset_folder (term-project)
-            model='pixel_car.glb', 
+            model='game_asset/pixel_car.glb', 
             # --------------------
-            scale=(0.5, 0.5, 0.45),
-            position=(0, 0.5, 0),
+            scale=(0.55, 0.55, 0.5),
+            position=(0, 0.1, 1.8),
             rotation_y=90,
             collider='box'
         )
         self.paused = False
 
-        self.honk = pygame.mixer.Sound("horn.wav")
+        self.honk = pygame.mixer.Sound("game_asset/horn.wav")
         self.honk.set_volume(0.5)
-        self.explode_sound = pygame.mixer.Sound("explode_sound.wav")
+        self.explode_sound = pygame.mixer.Sound("game_asset/explode_sound.wav")
         self.explode_sound.set_volume(0.5)
         # --- Joystick movement variables ---
         self.alive = True
@@ -39,7 +39,7 @@ class Player(Entity):
         self.is_diving = False
         self.max_diving_time = 3
         self.diving_timer = 0
-        self.final_y = 0.5
+        self.final_y = 0.1
         self.cooldown_time = 5
         self.cooldown_timer = 0
 
@@ -100,7 +100,7 @@ class Player(Entity):
             # ----------------- ถ้ากำลังมุด → โผล่ขึ้น -----------------
             if self.is_diving:
                 self.is_diving = False
-                self.final_y = 0.5
+                self.final_y = 0.1
                 self.cooldown_timer = self.cooldown_time  # เริ่ม cooldown ใหม่ทันที
 
             # ----------------- ถ้าอยู่บนดิน → มุดลง -----------------
@@ -119,7 +119,7 @@ class Player(Entity):
             # หมดเวลามุด → เด้งขึ้นอัตโนมัติ
             if self.diving_timer <= 0:
                 self.is_diving = False
-                self.final_y = 0.5
+                self.final_y = 0.1
                 self.cooldown_timer = self.cooldown_time
 
         # ----------------- ถ้าอยู่บนดิน → ลด cooldown -----------------

@@ -1,6 +1,5 @@
 import pygame, sys, math
 import subprocess
-import os # <-- 1. IMPORT OS
 
 def run_menu() :
     pygame.init()
@@ -8,35 +7,30 @@ def run_menu() :
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("City Racer Menu")
 
-    # --- 2. FIND THE SCRIPT'S LOCATION ---
-    # This will be '.../term-project'
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    # -------------------------------------
-    menu_asset_dir = os.path.join(script_dir,'menu_asset')
     # ==== โหลดทรัพยากร ====
-    # --- 3. BUILD FULL PATHS FOR ALL ASSETS ---
+    # --- 3. BUILD ALL ASSETS ---
     try:
-        bg = pygame.image.load(os.path.join(menu_asset_dir, "menu_back.jpg")).convert()
+        bg = pygame.image.load("menu_asset/menu_back.jpg").convert()
         bg = pygame.transform.scale(bg, (WIDTH, HEIGHT))
         
-        pygame.mixer.music.load(os.path.join(menu_asset_dir, "menu_music.mp3"))
+        pygame.mixer.music.load("menu_asset/menu_music.mp3")
         pygame.mixer.music.set_volume(0.3)
         pygame.mixer.music.play(-1)
 
-        mouse_img = pygame.image.load(os.path.join(menu_asset_dir, "oiltank.png")).convert_alpha()
+        mouse_img = pygame.image.load("menu_asset/oiltank.png").convert_alpha()
         mouse_img = pygame.transform.scale(mouse_img,(100,100))
         pygame.mouse.set_visible(False)
 
-        btn_img = pygame.image.load(os.path.join(menu_asset_dir, "text_box.png")).convert_alpha()
+        btn_img = pygame.image.load("menu_asset/text_box.png").convert_alpha()
         btn_img = pygame.transform.scale(btn_img,(200,80))
 
-        car_img = pygame.image.load(os.path.join(menu_asset_dir, "car1_icon (2).png")).convert_alpha()
+        car_img = pygame.image.load("menu_asset/car1_icon (2).png").convert_alpha()
         car_img = pygame.transform.scale(car_img,(150,150))
 
-        smoke_img = pygame.image.load(os.path.join(menu_asset_dir, "smoke_icon.png")).convert_alpha()
+        smoke_img = pygame.image.load("menu_asset/smoke_icon.png").convert_alpha()
         smoke_img = pygame.transform.scale(smoke_img, (50,50))
 
-        flag_img = pygame.image.load(os.path.join(menu_asset_dir, "flag_racing.png")).convert_alpha()
+        flag_img = pygame.image.load("menu_asset/flag_racing.png").convert_alpha()
         flag_img = pygame.transform.scale(flag_img, (120,120))
     except pygame.error as e:
         print(f"Error loading asset: {e}")
@@ -47,13 +41,13 @@ def run_menu() :
     
     # --- Fonts (using built-in) ---
     try:
-        logo_font = pygame.font.SysFont("glitch", 90)
+        logo_font = pygame.font.Font("menu_asset/glitch.ttf", 90)
     except:
         print("Warning: 'glitch' font not found, using default.")
         logo_font = pygame.font.SysFont(None, 100)
         
     try:
-        btn_font = pygame.font.SysFont("Origami Mommy", 34)
+        btn_font = pygame.font.Font("menu_asset/origa___.ttf", 34)
     except:
         print("Warning: 'Origami Mommy' font not found, using default.")
         btn_font = pygame.font.SysFont(None, 40)
@@ -93,14 +87,10 @@ def run_menu() :
                     print("Start game!")  # ที่นี่ต่อเข้าโหมดเกมจริง
                     pygame.mixer.music.stop()
                     pygame.quit()
-                    
                     # --- 4. FIX THE SUBPROCESS CALL ---
                     # Tell the subprocess to run 'main.py'
-                    # and set its "working directory" (cwd) to our script's folder.
-                    # This is CRITICAL for your Ursina game to find its assets.
-                    main_py_path = os.path.join(script_dir, "main.py")
                     try:
-                        subprocess.run([sys.executable, main_py_path], cwd=script_dir, check=True)
+                        subprocess.run([sys.executable, 'main.py'], check=True)
                     except subprocess.CalledProcessError as e:
                         print(f"Error running main.py: {e}")
                     except FileNotFoundError:
