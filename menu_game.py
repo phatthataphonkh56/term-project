@@ -87,7 +87,6 @@ def run_menu() :
                     print("Start game!")  # ที่นี่ต่อเข้าโหมดเกมจริง
                     pygame.mixer.music.stop()
                     pygame.quit()
-                    # --- 4. FIX THE SUBPROCESS CALL ---
                     # Tell the subprocess to run 'main.py'
                     try:
                         subprocess.run([sys.executable, 'main.py'], check=True)

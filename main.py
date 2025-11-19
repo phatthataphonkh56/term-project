@@ -18,7 +18,7 @@ pygame.mixer.music.play(loops=-1)
 # --- Asset Folder Setup ---
 script_dir = os.path.dirname(os.path.abspath(__file__))
 app = Ursina(
-    fullscreen=True,
+    fullscreen=False,
     samples=0,
     borderless=True,
     asset_folder = script_dir 
@@ -335,7 +335,7 @@ def restart_game():
 def update():
     global speed, score, next_speed_increase_score, spawn_timer, spawn_interval
     global score_multiplier, next_multiplier_score
-    global paused
+    global paused,high_score
     
     if held_keys['p']:
         toggle_pause()
@@ -353,6 +353,9 @@ def update():
     score += (time.dt * (speed / 2)) * score_multiplier
     # --------------------------------------------
     score_text.text = f"Score: {int(score)}"
+
+    if int(score) > high_score:
+        high_score_text.text = f"High Score: {int(score)}"
 
     if score < 0:
         pygame.mixer.music.pause()
@@ -403,6 +406,10 @@ def update():
             player.explode_sound.play()
             player.enabled = False
             game_over_text.text = f"GAME OVER!\nFINAL SCORE: {int(score)}\n\nPress SPACE to restart"
+            if int(score) > high_score:
+                high_score = int(score)
+                with open(high_score_file, "w") as f:
+                    f.write(str(high_score))
             break
             
     # --- Update Gates (Unchanged) ---

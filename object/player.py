@@ -20,9 +20,9 @@ class Player(Entity):
         self.paused = False
 
         self.honk = pygame.mixer.Sound("game_asset/horn.wav")
-        self.honk.set_volume(0.5)
+        self.honk.set_volume(0.3)
         self.explode_sound = pygame.mixer.Sound("game_asset/explode_sound.wav")
-        self.explode_sound.set_volume(0.5)
+        self.explode_sound.set_volume(0.3)
         # --- Joystick movement variables ---
         self.alive = True
         self.move_speed = 5
