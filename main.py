@@ -18,7 +18,7 @@ pygame.mixer.music.play(loops=-1)
 # --- Asset Folder Setup ---
 script_dir = os.path.dirname(os.path.abspath(__file__))
 app = Ursina(
-    fullscreen=False,
+    fullscreen=True,
     samples=0,
     borderless=True,
     asset_folder = script_dir 
