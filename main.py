@@ -15,23 +15,20 @@ pygame.mixer.music.set_volume(0.1)
 pygame.mixer.music.play(loops=-1)
 
 
-# --- Asset Folder Setup ---
-script_dir = os.path.dirname(os.path.abspath(__file__))
+
 app = Ursina(
-    fullscreen=True,
+    fullscreen=False,
     samples=0,
-    borderless=True,
-    asset_folder = script_dir 
+    borderless=False,
 )
 # --------------------------------
 # --- Find textures *once* ---
-wall_texture_dir = os.path.join(script_dir, 'obstacle_pic')
 wall_textures = []
-if os.path.exists(wall_texture_dir):
+if os.path.exists('obstacle_pic'):
     try:
-        for file in os.listdir(wall_texture_dir):
+        for file in os.listdir('obstacle_pic'):
             if file.lower().endswith(('.png', '.jpg', '.jpeg')):
-                wall_textures.append(os.path.join('obstacle_pic', file)) 
+                wall_textures.append(file) 
     except Exception as e:
         print(f"Error loading obstacle textures: {e}")
         
