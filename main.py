@@ -13,6 +13,8 @@ pygame.mixer.init()
 pygame.mixer.music.load("bgm.wav")
 pygame.mixer.music.set_volume(0.1)
 pygame.mixer.music.play(loops=-1)
+
+
 # --- Asset Folder Setup ---
 script_dir = os.path.dirname(os.path.abspath(__file__))
 app = Ursina(
@@ -83,6 +85,29 @@ target_resolution = (480, 270)
 camera.set_shader_input('resolution', target_resolution)
 
 # --- UI Setup (Unchanged) ---
+
+skill_text = Text(
+    parent=camera.ui,
+    text="T Underground\nH Honk\nP Pause the game",
+    position=(-0.85, -0.35),
+    scale=1.1,
+    color=color.azure,
+    font='object/MODENINE.TTF'
+)
+
+# --- High Score ---
+high_score = 0
+high_score_file = os.path.join(script_dir, "highscore.txt")
+
+if os.path.exists(high_score_file):
+    try:
+        with open(high_score_file, "r") as f:
+            high_score = int(f.read().strip())
+    except:
+        high_score = 0
+
+
+
 game_over_text = Text(
     parent=camera.ui, 
     text='', 
@@ -92,10 +117,18 @@ game_over_text = Text(
     background=False, 
     font='object/MODENINE.TTF' 
 )
+high_score_text = Text(
+    parent=camera.ui,
+    text=f"High Score: {high_score}",
+    position=(-0.85, 0.45),
+    scale=1.2,
+    color=color.yellow,
+    font='object/MODENINE.TTF'
+)
 score_text = Text(
     parent=camera.ui, 
     text='Score: 0', 
-    position=(-0.85, 0.45), 
+    position=(-0.85, 0.42), 
     scale=1.2, 
     background=False, 
     font='object/MODENINE.TTF' 
@@ -104,12 +137,13 @@ score_text = Text(
 multiplier_text = Text(
     parent=camera.ui,
     text='x1',
-    position=(-0.85, 0.38), # Below the score
+    position=(-0.85, 0.39), # Below the score
     scale=1.2,
     background=False,
     color=color.cyan,
     font='object/MODENINE.TTF'
 )
+
 
 # --- Pause System ---
 paused = False

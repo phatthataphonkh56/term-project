@@ -45,9 +45,9 @@ class Player(Entity):
 
         # UI cooldown bar
         self.cooldown_bar = Entity(parent=camera.ui, model='quad', color=color.azure,
-                                   scale=(0.3, 0.03), position=(-0.6, -0.45), origin=(-0.5, 0))
+                                   scale=(0.3, 0.03), position=(-0.85, -0.45), origin=(-0.5, 0))
         self.cooldown_bar_bg = Entity(parent=camera.ui, model='quad', color=color.gray,
-                                      scale=(0.3, 0.03), position=(-0.6, -0.45), origin=(-0.5, 0), z=1)
+                                      scale=(0.3, 0.03), position=(-0.85, -0.45), origin=(-0.5, 0), z=1)
 
         self.shadow = Entity(
             parent=self,
