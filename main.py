@@ -9,6 +9,10 @@ from object.background import Background
 from object.obstacle import Obstacle
 from object.gate import Gate 
 import pygame
+pygame.mixer.init()
+pygame.mixer.music.load("bgm.wav")
+pygame.mixer.music.set_volume(0.1)
+pygame.mixer.music.play(loops=-1)
 # --- Asset Folder Setup ---
 script_dir = os.path.dirname(os.path.abspath(__file__))
 app = Ursina(
@@ -18,7 +22,6 @@ app = Ursina(
     asset_folder = script_dir 
 )
 # --------------------------------
-
 # --- Find textures *once* ---
 wall_texture_dir = os.path.join(script_dir, 'obstacle_pic')
 wall_textures = []
@@ -105,6 +108,19 @@ multiplier_text = Text(
     scale=1.2,
     background=False,
     color=color.cyan,
+    font='object/MODENINE.TTF'
+)
+
+# --- Pause System ---
+paused = False
+
+pause_text = Text(
+    parent=camera.ui,
+    text='PAUSED',
+    origin=(0,0),
+    scale=2,
+    color=color.azure,
+    enabled=False,
     font='object/MODENINE.TTF'
 )
 # ---------------------------------
@@ -240,6 +256,15 @@ def recycle_entity(current_speed):
             value = values[i]
             gate.reset(spawn_z, x_pos, value, current_speed)
 # -------------------------------------------
+def toggle_pause():
+    global paused
+    paused = not paused
+    player.paused = paused   
+    pause_text.enabled = paused
+    if paused:
+        pygame.mixer.music.pause()
+    else:
+        pygame.mixer.music.unpause()
 
 # --- (MODIFIED) Restart Game ---
 def restart_game():
@@ -260,7 +285,8 @@ def restart_game():
     next_multiplier_score = 1000 # For multiplier
     multiplier_text.text = 'x1'
     # ------------------------------
-    
+    pygame.mixer.music.stop()
+    pygame.mixer.music.play(loops=-1)
     game_over_text.text = ''
     
     spawn_timer = 0.5
@@ -276,6 +302,14 @@ def restart_game():
 def update():
     global speed, score, next_speed_increase_score, spawn_timer, spawn_interval
     global score_multiplier, next_multiplier_score
+    global paused
+    
+    if held_keys['p']:
+        toggle_pause()
+        time.sleep(0.25)  
+
+    if paused:
+        return
 
     if not player.alive:
         if held_keys['space']:
@@ -288,6 +322,7 @@ def update():
     score_text.text = f"Score: {int(score)}"
 
     if score < 0:
+        pygame.mixer.music.pause()
         player.explode_sound.play()
         player.alive = False
         explosion(player.position)
@@ -329,6 +364,7 @@ def update():
         if obs.z < player.z - 15:
             obs.enabled = False
         if player.intersects(obs).hit:
+            pygame.mixer.music.pause()
             player.alive = False
             explosion(player.position)
             player.explode_sound.play()

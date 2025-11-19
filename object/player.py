@@ -17,6 +17,8 @@ class Player(Entity):
             rotation_y=90,
             collider='box'
         )
+        self.paused = False
+
         self.honk = pygame.mixer.Sound("horn.wav")
         self.honk.set_volume(0.5)
         self.explode_sound = pygame.mixer.Sound("explode_sound.wav")
@@ -57,6 +59,9 @@ class Player(Entity):
         )
 
     def update(self):
+        if self.paused:
+            return
+        
         if not self.alive:
             return
 
