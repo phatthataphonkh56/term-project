@@ -17,9 +17,9 @@ pygame.mixer.music.play(loops=-1)
 
 
 app = Ursina(
-    fullscreen=False,
+    fullscreen=True,
     samples=0,
-    borderless=False,
+    borderless=True,
 )
 # --------------------------------
 # --- Find textures *once* ---
